@@ -1,0 +1,7 @@
+export const ERROR_STUDENT_NAME_NOT_PROVIDED = 0x1;
+export const ERROR_MOTHER_NAME_NOT_PROVIDED = 0x2;
+export const ERROR_BIRTH_DATE_NOT_PROVIDED = 0x4;
+export const ERROR_BIRTH_DATE_NOT_VALID = 0x8;
+export const ERROR_YEAR_NOT_PROVIDED = 0x10;
+export const ERROR_YEAR_NOT_VALID = 0x20;
+export const ERROR_YEAR_NOT_IN_RANGE = 0x40;

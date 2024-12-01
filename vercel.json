@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/404.json"
+        },
+        {
+            "source": "/api/v1/(.*)",
+            "destination": "/src/api/v1/"
+        }
+    ]
+}
