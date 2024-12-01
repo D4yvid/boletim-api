@@ -9,5 +9,10 @@
             "source": "/api/v1/(.*)",
             "destination": "/src/api/v1/"
         }
-    ]
+    ],
+    "functions": {
+        "api/v1/boletim/fetch.ts": {
+            "maxDuration": 60
+        }
+    }
 }
