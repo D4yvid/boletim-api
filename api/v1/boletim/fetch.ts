@@ -1,14 +1,12 @@
-import {
-    VercelRequest,
-    VercelRequestQuery,
-    VercelResponse,
-} from "@vercel/node";
+import { VercelRequest, VercelResponse } from "@vercel/node";
 import { useCache } from "../../../util/cache";
 import { useResponse } from "../../../util/response";
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } from "../../../util/status";
-import { fetchBoletim } from "../../../boletim/boletim";
+import {
+    fetchBoletim,
+    validateRequestParameters,
+} from "../../../boletim/boletim";
 import { unwrap } from "../../../util/error";
-import { validateRequestParameters } from "./common";
 
 export default async function handler(
     request: VercelRequest,
@@ -23,7 +21,9 @@ export default async function handler(
     }
 
     try {
-        const fetchRequest = unwrap(validateRequestParameters(request.query));
+        const query = request.query as { [key: string]: string };
+
+        const fetchRequest = unwrap(validateRequestParameters(query));
         const boletim = unwrap(await fetchBoletim(fetchRequest));
 
         return result(boletim, OK);
