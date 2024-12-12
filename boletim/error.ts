@@ -1,3 +1,4 @@
+export const ERROR_UNKNOWN = 0x00;
 export const ERROR_STUDENT_NAME_NOT_PROVIDED = 0x1;
 export const ERROR_MOTHER_NAME_NOT_PROVIDED = 0x2;
 export const ERROR_BIRTH_DATE_NOT_PROVIDED = 0x4;
@@ -5,3 +6,7 @@ export const ERROR_BIRTH_DATE_NOT_VALID = 0x8;
 export const ERROR_YEAR_NOT_PROVIDED = 0x10;
 export const ERROR_YEAR_NOT_VALID = 0x20;
 export const ERROR_YEAR_NOT_IN_RANGE = 0x40;
+export const ERROR_COOKIE_PARSING = 0x80;
+export const ERROR_USER_DOESNT_EXIST = 0x100;
+export const ERROR_NO_REDIRECT_URL_FOUND = 0x200;
+export const ERROR_FETCHING_BOLETIM_URL = 0x400;
