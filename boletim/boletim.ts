@@ -106,10 +106,10 @@ export function validateRequestParameters(query: {
 
   const year = parseInt(yearString);
 
-  if (year < 2020 || year > 2024) {
+  if (year < 2020 || year > 2025) {
     return Err({
       code: ERROR_YEAR_NOT_IN_RANGE,
-      message: "The 'year' field is not in the range 2020 <= n <= 2024",
+      message: "The 'year' field is not in the range 2020 <= n <= 2025",
     });
   }
 
