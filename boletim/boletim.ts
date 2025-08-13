@@ -69,9 +69,11 @@ import {
 
 export function validateRequestParameters(query: {
   [key: string]: string;
-}): Result<BoletimFetchRequest, { code: number; message: string }> {
+}): Result<BoletimFetchRequest, { errors: ({ code: number, message: string })[] }> {
+  const { errors }: { errors: ({ code: number, message: string })[] } = { errors: [] };
+
   if (!query.studentName) {
-    return Err({
+    errors.push({
       code: ERROR_STUDENT_NAME_NOT_PROVIDED,
       message: "The 'studentName' field was not supplied",
     });
@@ -80,7 +82,7 @@ export function validateRequestParameters(query: {
   const studentName = query.studentName;
 
   if (!query.motherName) {
-    return Err({
+    errors.push({
       code: ERROR_MOTHER_NAME_NOT_PROVIDED,
       message: "The 'motherName' field was not supplied",
     });
@@ -89,32 +91,33 @@ export function validateRequestParameters(query: {
   const motherName = query.motherName;
 
   if (!query.year) {
-    return Err({
+    errors.push({
       code: ERROR_YEAR_NOT_PROVIDED,
       message: "The 'year' field was not supplied",
     });
   }
 
   const yearString = query.year;
+  let year: number | undefined;
 
-  if (!yearString.match(/[0-9]{4}/g)) {
-    return Err({
+  if (!yearString || !yearString.match(/[0-9]{4}/g)) {
+    errors.push({
       code: ERROR_YEAR_NOT_VALID,
       message: "The 'year' field doesn't matches the format YYYY",
     });
-  }
+  } else if (yearString) {
+    year = parseInt(yearString);
 
-  const year = parseInt(yearString);
-
-  if (year < 2020 || year > 2025) {
-    return Err({
-      code: ERROR_YEAR_NOT_IN_RANGE,
-      message: "The 'year' field is not in the range 2020 <= n <= 2025",
-    });
+    if (year < 2020 || year > 2025) {
+      errors.push({
+        code: ERROR_YEAR_NOT_IN_RANGE,
+        message: "The 'year' field is not in the range 2020 <= n <= 2025",
+      });
+    }
   }
 
   if (!query.birthDate) {
-    return Err({
+    errors.push({
       code: ERROR_BIRTH_DATE_NOT_PROVIDED,
       message: "The 'birthDate' field was not supplied",
     });
@@ -122,19 +125,23 @@ export function validateRequestParameters(query: {
 
   const birthDate = query.birthDate;
 
-  if (!birthDate.match(/[0-9]{2}\/[0-9]{2}\/[0-9]{4}/g)) {
-    return Err({
+  if (!birthDate || !birthDate.match(/[0-9]{2}\/[0-9]{2}\/[0-9]{4}/g)) {
+    errors.push({
       code: ERROR_BIRTH_DATE_NOT_VALID,
       message: "The 'birthDate' field doesn't matches the format dd/mm/YYYY",
     });
   }
 
-  return Ok({
-    birthDate,
-    motherName,
-    studentName,
-    year,
-  });
+  if (errors.length === 0) {
+    return Ok({
+      birthDate,
+      motherName,
+      studentName,
+      year: year!,
+    });
+  }
+
+  return Err({ errors });
 }
 
 function parseCookies(cookieString: string): Result<object, { code: number; message: string }> {
