@@ -144,7 +144,7 @@ export function validateRequestParameters(query: {
   return Err({ errors });
 }
 
-function parseCookies(cookieString: string): Result<object, { code: number; message: string }> {
+function parseCookies(cookieString: string): Result<{ [key: string]: string }, { code: number; message: string }> {
   try {
     let cookies: { [key: string]: string } = {};
     let parts = cookieString.split(";");
@@ -156,6 +156,13 @@ function parseCookies(cookieString: string): Result<object, { code: number; mess
 
     return Ok(cookies);
   } catch (e) {
+    if (!(e instanceof Error)) {
+      return Err({
+        code: ERROR_COOKIE_PARSING,
+        message: `${e}`
+      })
+    }
+
     return Err({
       code: ERROR_COOKIE_PARSING,
       message: e.message
@@ -223,6 +230,13 @@ export async function sendFormRequest(
 
     return Ok({ actionUrl: result, sessionId: cookies["PHPSESSID"] });
   } catch (e) {
+    if (!(e instanceof Error)) {
+      return Err({
+        code: ERROR_UNKNOWN,
+        message: `${e}`
+      })
+    }
+
     return Err({
       code: ERROR_UNKNOWN,
       message: e.message
@@ -251,6 +265,13 @@ async function getBoletimURL(
 
     return Ok("visualizaBoletim.php");
   } catch (e) {
+    if (!(e instanceof Error)) {
+      return Err({
+        code: ERROR_UNKNOWN,
+        message: `${e}`
+      })
+    }
+
     return Err({ code: ERROR_UNKNOWN, message: e.message });
   }
 }
@@ -336,6 +357,13 @@ const parseDataTable = (
 
     return Ok(data);
   } catch (e) {
+    if (!(e instanceof Error)) {
+      return Err({
+        code: ERROR_UNKNOWN,
+        message: `${e}`
+      })
+    }
+
     return Err({ code: ERROR_UNKNOWN, message: e.message });
   }
 };
@@ -403,13 +431,13 @@ const parseCurricularDataTable = (
         if (dataName == "grades") {
           let gradeIndex = INDEX_OF_GRADES + rowIndex - 1;
 
-          rowData.grades[gradeIndex] = parseFloat(
+          rowData.grades[gradeIndex as keyof typeof rowData.grades] = parseFloat(
             content.trim().replace(",", "."),
           );
           hasData = true;
         } else {
           if (dataName != "subject" && dataName != "finalResult")
-            rowData[dataName] = parseFloat(content.trim().replace(",", "."));
+            (rowData as { [key: string]: any })[dataName] = parseFloat(content.trim().replace(",", "."));
           else {
             rowData[dataName] = (
               content.trim() == "-" ? undefined : content.trim()
@@ -427,6 +455,13 @@ const parseCurricularDataTable = (
 
     return Ok(data);
   } catch (e) {
+    if (!(e instanceof Error)) {
+      return Err({
+        code: ERROR_UNKNOWN,
+        message: `${e}`
+      })
+    }
+
     return Err({ code: ERROR_UNKNOWN, message: e.message });
   }
 };
@@ -482,6 +517,13 @@ const getBoletim = async (
 
     return Ok(boletim);
   } catch (e) {
+    if (!(e instanceof Error)) {
+      return Err({
+        code: ERROR_UNKNOWN,
+        message: `${e}`
+      })
+    }
+
     return Err({ code: ERROR_UNKNOWN, message: e.message });
   }
 };
@@ -499,6 +541,6 @@ export async function fetchBoletim(
 
     return Ok(boletim);
   } catch (err) {
-    return Err(err);
+    return Err(err as { code: number, message: string });
   }
 }

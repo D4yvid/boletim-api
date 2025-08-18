@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { cache } from "../../../util/cache";
 import { useResponse } from "../../../util/response";
-import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } from "../../../util/status";
+import { BAD_REQUEST, INTERNAL_SERVER_ERROR, GET, OK } from "../../../util/status";
 import {
   fetchBoletim,
   validateRequestParameters,
@@ -16,8 +16,8 @@ export default async function handler(
 
   const result = useResponse(response);
 
-  if (request.method != "GET") {
-    return result(null, BAD_REQUEST);
+  if (request.method != GET) {
+    return result("invalid request method", BAD_REQUEST);
   }
 
   try {

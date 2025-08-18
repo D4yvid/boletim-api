@@ -8,8 +8,8 @@ type CacheOptions = {
 
 export const DEFAULT_CACHE_OPTIONS: CacheOptions = {
   vercelCacheAge: 3600,
-  cdnCacheAge: 60,
-  browserCacheAge: 10,
+  cdnCacheAge: 3600,
+  browserCacheAge: 3600,
 };
 
 export function cache(

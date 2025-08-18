@@ -1,18 +1,21 @@
 {
-    "name": "boletim-api",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "@vercel/functions": "^1.5.1",
-        "@vercel/node": "^3.2.27",
-        "jsdom": "^25.0.1",
-        "typescript": "^5.7.2"
-    },
-    "devDependencies": {
-        "@types/jsdom": "^21.1.7"
-    }
+  "name": "boletim-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": {
+    "name": "Dayvid Albuquerque",
+    "email": "dayvid@email.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@vercel/functions": "^1.5.1",
+    "@vercel/node": "^3.2.27",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7"
+  }
 }

@@ -1,4 +1,7 @@
 {
+  "error": true,
+  "data": {
     "status": 404,
     "message": "Resource not found"
+  }
 }
