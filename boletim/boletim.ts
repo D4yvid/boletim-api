@@ -4,7 +4,7 @@ import { Ok, Err, unwrap, Result } from "../util/error";
 export type BoletimInformation = {
   course: string;
   grade: string;
-  academicYear: string;
+  academicYear: number;
   birthDate: string;
   city: string;
   class: string;
@@ -16,21 +16,23 @@ export type BoletimInformation = {
 
 export type BoletimGrade = {
   subject?: string;
-  grades: {
-    1?: number;
-    2?: number;
-    3?: number;
-    4?: number;
-  };
+  subjectCode?: number;
+  grades: number[];
   annualGradeAverage?: number;
   absences?: number;
   annualFrequence?: number;
-  finalResult?: "APV" | "RPV" | "RPF";
+  finalResult?: "APV" | "RPV" | "RPF" | null;
+};
+
+export type BoletimResult = {
+  annualFrequence?: number;
+  finalResult?: string;
 };
 
 export type Boletim = {
   information: BoletimInformation;
   grades: BoletimGrade[];
+  result: BoletimResult;
 };
 
 export type BoletimFetchRequest = {
@@ -66,6 +68,7 @@ import {
   ERROR_YEAR_NOT_VALID,
   ERROR_FETCHING_BOLETIM_URL
 } from "./error";
+import { correctSpellingOf, SpellingOptions } from "../util/text";
 
 export function validateRequestParameters(query: {
   [key: string]: string;
@@ -98,7 +101,7 @@ export function validateRequestParameters(query: {
   }
 
   const yearString = query.year;
-  let year: number | undefined;
+  let year: number | null;
 
   if (!yearString || !yearString.match(/[0-9]{4}/g)) {
     errors.push({
@@ -305,7 +308,7 @@ const parseDataTable = (
       grade: "",
       shift: "",
       state: "",
-      academicYear: "",
+      academicYear: 0,
     };
 
     let rows: NodeList = dataTable.querySelectorAll("tbody > tr");
@@ -346,7 +349,34 @@ const parseDataTable = (
           nextIsValue = false;
 
           if (key) {
-            data[key] = content.trim() == "" ? "" : content.trim();
+            let options: SpellingOptions = {};
+
+            switch (key) {
+              case 'school':
+                options.maintainUppercasedWords = ['EEEFM', 'EEEM', 'EEEF'];
+
+              case 'name':
+                options.allWordsUppercased = true;
+                break;
+
+              case 'course':
+                options.allWordsUppercased = true;
+                options.replacements = {
+                  NEM: 'Novo Ensino Médio'
+                };
+                break;
+
+              case 'academicYear':
+              case 'class':
+              case 'birthDate':
+                options.process = false;
+                break;
+            }
+
+            if (key == 'academicYear')
+              data.academicYear = parseInt(content.trim());
+            else
+              data[key] = correctSpellingOf(content.trim() == "" ? "" : content.trim(), options);
           }
 
           key = null;
@@ -373,7 +403,7 @@ const parseCurricularDataTable = (
 ): Result<BoletimGrade[], { code: number, message: string }> => {
   try {
     let data: BoletimGrade[] = [];
-    let rows = gradesTable.querySelectorAll("tbody > tr");
+    let rows = [...gradesTable.querySelectorAll("tbody > tr")].slice(2, -3);
 
     const ROW_DATA_NAME_FROM_INDEX = [
       "subject",
@@ -386,67 +416,59 @@ const parseCurricularDataTable = (
       "annualFrequence",
       "finalResult",
     ];
-    const INDEX_OF_GRADES = ROW_DATA_NAME_FROM_INDEX.indexOf("grades");
 
     for (let row of rows) {
       let rowIndex = 0;
       let hasData = false;
       let rowData: BoletimGrade = {
         subject: "",
-        grades: {
-          1: 0,
-          2: 0,
-          3: 0,
-          4: 0,
-        },
+        subjectCode: 0,
+        grades: [],
         annualGradeAverage: 0,
         absences: 0,
         annualFrequence: 0,
-        finalResult: undefined,
+        finalResult: null,
       };
 
       let children = row.childNodes;
       let skipRow = false;
 
       for (let child of children) {
-        if (skipRow) continue;
-
         let name = child.nodeName.toLowerCase();
         let content = child.textContent!;
 
         if (name == "#text" || name == "#comment") continue;
 
-        if (
-          content == "Componentes Curriculares" ||
-          content == "1ª Av" ||
-          content == "Resultado Final Matrícula Regular: " ||
-          content == "Frequência Anual(%):"
-        ) {
-          skipRow = true;
-          continue;
-        }
-
         let dataName = ROW_DATA_NAME_FROM_INDEX[rowIndex];
 
         if (dataName == "grades") {
-          let gradeIndex = INDEX_OF_GRADES + rowIndex - 1;
-
-          rowData.grades[gradeIndex as keyof typeof rowData.grades] = parseFloat(
-            content.trim().replace(",", "."),
-          );
-          hasData = true;
-        } else {
-          if (dataName != "subject" && dataName != "finalResult")
-            (rowData as { [key: string]: any })[dataName] = parseFloat(content.trim().replace(",", "."));
-          else {
-            rowData[dataName] = (
-              content.trim() == "-" ? undefined : content.trim()
-            ) as keyof typeof rowData.finalResult;
-          }
+          rowData.grades.push(parseFloat(content.trim().replace(",", ".")));
 
           hasData = true;
+          rowIndex++;
+
+          continue;
         }
 
+        switch (dataName) {
+          case 'subject':
+            let [code, subject] = content.trim().split(' - ').map(item => item.trim());
+
+            rowData.subject = correctSpellingOf(subject, { allWordsUppercased: true });
+            rowData.subjectCode = parseInt(code);
+
+            break;
+
+          case 'finalResult':
+            rowData.finalResult = (content.trim() == "-" ? null : content.trim()) as any;
+            break;
+
+          default:
+            rowData[dataName as keyof BoletimGrade] = parseFloat(content.trim().replace(",", ".")) as never;
+            break;
+        }
+
+        hasData = true;
         rowIndex++;
       }
 
@@ -465,6 +487,46 @@ const parseCurricularDataTable = (
     return Err({ code: ERROR_UNKNOWN, message: e.message });
   }
 };
+
+const parseResultTable = (
+  boletim: Boletim,
+  gradesTable: Element
+): Result<BoletimResult, { code: number; message: string; }> => {
+  try {
+    let result: BoletimResult = {};
+    let rows = [...gradesTable.querySelectorAll("tbody>tr")].slice(-3, -1);
+
+    for (let row of rows) {
+      let children = [...row.childNodes]
+        .filter(node => node.nodeName != '#text')
+        .map(child => (child.textContent ?? '').trim());
+
+      for (let i = 0; i < children.length; i += 2) {
+        let key = children[i] ?? '';
+        let value = children[i + 1] ?? '';
+
+        if (key.includes('Frequência')) {
+          result.annualFrequence = parseFloat(value.replace(',', '.').trim());
+        } else if (key.includes('Resultado Final')) {
+          result.finalResult = correctSpellingOf(value.replace(`${boletim.information.class} -`, '').trim());
+        } else {
+          console.debug('New Key:', key, value);
+        }
+      }
+    }
+
+    return Ok(result);
+  } catch (e) {
+    if (!(e instanceof Error)) {
+      return Err({
+        code: ERROR_UNKNOWN,
+        message: `${e}`
+      })
+    }
+
+    return Err({ code: ERROR_UNKNOWN, message: e.message });
+  }
+}
 
 const getBoletim = async (
   response: BoletimFetchDataRequest,
@@ -494,9 +556,11 @@ const getBoletim = async (
         grade: "",
         shift: "",
         state: "",
-        academicYear: "",
+        academicYear: 0,
       },
+
       grades: [],
+      result: {}
     };
 
     const { document } = new JSDOM(text).window;
@@ -513,6 +577,7 @@ const getBoletim = async (
       }
 
       boletim.grades = unwrap(parseCurricularDataTable(table));
+      boletim.result = unwrap(parseResultTable(boletim, table));
     }
 
     return Ok(boletim);

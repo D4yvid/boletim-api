@@ -14,10 +14,10 @@ export default async function handler(
 ) {
   cache(response);
 
-  const result = useResponse(response);
+  const res = useResponse(response);
 
   if (request.method != GET) {
-    return result("invalid request method", BAD_REQUEST);
+    return res("invalid request method", BAD_REQUEST);
   }
 
   try {
@@ -26,8 +26,8 @@ export default async function handler(
     const fetchRequest = unwrap(validateRequestParameters(query));
     const boletim = unwrap(await fetchBoletim(fetchRequest));
 
-    return result(boletim, OK);
+    return res(boletim, OK);
   } catch (err: unknown) {
-    return result(err, INTERNAL_SERVER_ERROR);
+    return res(err, INTERNAL_SERVER_ERROR);
   }
 }
